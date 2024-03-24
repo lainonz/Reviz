@@ -36,22 +36,21 @@ if not os.path.exists(file_result):
     open(file_result, "w").close()
 
 def get_domains(ip):
-    if 'http' in ip or 'www' in ip or '/' in ip:
-        urls = ip.replace("http://", "").replace("https://", "").replace("www.", "").replace("/", "")
-    else:
-        urls = ip
-
-    ips = socket.gethostbyname(urls)
-    print(f"[{ip}] => [{ips}]")
-    response = requests.get(url + ips, verify=False)
+    response = requests.get(url + ip, verify=False)
+    print(f"{ip}")
     data = response.json()
     domains = [item['domain'] for item in data]
     return domains
 
 def reverse(ip):
-    domains = get_domains(ip)
+    if '/' in ip or 'http' in ip or 'www' in ip:
+        urls = ip.replace("http://", "").replace("https://", "").replace("www.", "").replace("/", "")
+        domains = get_domains(socket.gethostbyname(urls))
+    else:
+        domains = get_domains(ip)
+
     total_domains = len(domains)
-    print(f"[{ip}] => [{total_domains} domain]")
+    print(f"[{ip}] [{total_domains} domain]")
     with open(file_result, "a", encoding="utf-8") as f:
         for domain in domains:
             f.write(domain + "\n")
