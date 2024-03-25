@@ -1,70 +1,44 @@
-import requests
-import os
-import concurrent.futures
-import sys
-import urllib3
-import socket
+import requests, json 
+from multiprocessing.dummy import Pool
 
-print('''
-8888888b.                   d8b
-888   Y88b                  Y8P
-888    888
-888   d88P .d88b.  888  888 888 88888888
-8888888P" d8P  Y8b 888  888 888    d88P
-888 T88b  88888888 Y88  88P 888   d88P
-888  T88b Y8b.      Y8bd8P  888  d88P
-888   T88b "Y8888    Y88P   888 88888888
+class Domain:
+    def __init__(self, domain):
+        self.domain = domain
+    
+    def reverse(self):
+        try:
+            r = requests.get("http://api.webscan.cc/?action=query&ip={}".format(self.domain))
+            result = json.loads(r.text)
+            print("[{}] > [{} Domain]".format(self.domain, len(result)))
+            for a in result:
+                open('reverse.txt', 'a').write('http://' + a["domain"] + "\n")
+        except:
+            pass
+        
+    def process(self):
+        website.reverse()
 
-    Reverse IP
-    By : angga1337
-                         ''')
+def asuna(list):    
+    global website
+    website = Domain(list)
+    website.process()
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-url = "https://api.webscan.cc/?action=query&ip="
-file_input = input("Weblist: ")
-file_result = input("Result filename: ")
+def main():
+    print("""
+Reverse IP
+Author : angga1337
+    """)
+    try:
+        urList = open(input("weblist: "), "r").read().replace("https://", "").replace("http://", "").replace("/", "").split("\n")
+        thread = int(input("thread: "))
+        print("\n")
+        pool = Pool(thread)
+        pool.map(asuna, urList)
+        pool.close()
+        pool.join
+    except:
+        print("[!] Something wrong please try again...")
 
-try:
-    threads = int(input("Thread: "))
-    if threads <= 0:
-        raise ValueError
-except ValueError:
-    print("Please provide a valid number!")
-    sys.exit()
-
-if not os.path.exists(file_result):
-    open(file_result, "w").close()
-
-def get_domains(ip):
-    response = requests.get(url + ip, verify=False)
-    print(f"{ip}")
-    data = response.json()
-    domains = [item['domain'] for item in data]
-    return domains
-
-def reverse(ip):
-    if '/' in ip or 'http' in ip or 'www' in ip:
-        urls = ip.replace("http://", "").replace("https://", "").replace("www.", "").replace("/", "")
-        domains = get_domains(socket.gethostbyname(urls))
-    else:
-        domains = get_domains(ip)
-
-    total_domains = len(domains)
-    print(f"[{ip}] [{total_domains} domain]")
-    with open(file_result, "a", encoding="utf-8") as f:
-        for domain in domains:
-            f.write(domain + "\n")
-
-try:
-    ips = []
-    with open(file_input, "r") as f:
-        ips = f.read().splitlines()
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
-        results = [executor.submit(reverse, ip) for ip in ips]
-
-except KeyboardInterrupt:
-    print("\nStopped!")
-finally:
-    print(f"Result saved to {file_result}")
+if __name__ == '__main__':
+    main()
 
